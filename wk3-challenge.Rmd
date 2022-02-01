@@ -1,0 +1,94 @@
+---
+title: "week3-challenge"
+author: "Sam Smith"
+date: "2/1/2022"
+output: html_document
+---
+load ya libraries and dataset. Explore the data
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+f <- "https://raw.githubusercontent.com/difiore/ada-2022-datasets/main/KamilarAndCooperData.csv"
+d <- read_csv(f, col_names = TRUE) # creates a "tibble"
+str(d) # what is the structure of the data
+names(d) # what are the variable names
+```
+
+make boxplots with base r and with ggplot2.
+
+```{r}
+# base graphics
+boxplot(log(d$Body_mass_female_mean)~d$Family)
+# ggplot2
+ggplot(d, aes(x=Family,y=log(Body_mass_female_mean))) +
+  geom_boxplot()
+```
+
+Make bivariate scatterplots - these are useful for exploring continuous data.
+
+```{r}
+# using base r
+par(mfrow = c(1,2))
+# raw data
+plot(d$Body_mass_female_mean,d$Brain_Size_Female_Mean,
+     xlab="Female mean body mass",ylab="Female mean brain size")
+# log transformed data
+plot(log(d$Body_mass_female_mean),log(d$Brain_Size_Female_Mean),
+     xlab="log(female mean body mass)",ylab="log(female mean brain size")
+```
+
+make bivariate scatterplot using car and then ggplot2
+
+``` {r}
+# using car
+library(car)
+scatterplot(
+  data = d,
+  log(MaxLongevity_m) ~ log(Body_mass_female_mean),
+  xlab = "log(mean female body mass",
+  ylab = "log(max longevity)",
+  boxplots = "xy",
+  regLine = 
+    list(
+       # method = lm,
+       lty = 1,
+       lwd = 2,
+       col = "red"
+    )
+)
+# using ggplot2
+ggplot(d,aes(x=log(Body_mass_female_mean),y=log(MaxLongevity_m),color=factor(Family))) +
+  xlab("log(mean female body mass") + ylab("log(max longevity)") +
+  geom_point(na.rm = TRUE) + theme(legend.position="bottom", legend.title=element_blank())
+```
+
+Select the variables Brain_Size_Female_Mean, Body_mass_female_mean, MeanGroupSize, WeaningAge_d, MaxLongevity_m, HomeRange_km2, and DayLength_km from data frame d and plot scatterplots of all pairs of variables.
+
+```{r}
+library(car)
+scatterplotMatrix(d[,c(6,9,12,19,20,29,31)],smooth = TRUE,
+  regLine = list(method = lm, lty = 1, lwd = 2),
+  ellipse = TRUE,
+  upper.panel = NULL)
+```
+
+Now onto the challenge posed during class:
+In one line of code, add a variable, binomial to the data frame d, which is a concatenation of the genus and species. trim the data frame to only include the variables binomial, family, brain_size_species_mean, body_mass_male_mean. Group the variables by family. Calculate the avg value from brain size and body mass male mean per family (na.rm should be true here). Then arrange by increasing average brain size.
+
+``` {r}
+library(dplyr)
+# add binomial variable
+new_df <- mutate(d,"Binomial" = paste(Genus,Species,sep = " ")) %>%
+  # only keep certain variables
+  select(Binomial,Family,Brain_Size_Species_Mean,Body_mass_male_mean) %>%
+  # group variables by family
+  group_by(Family) %>%
+  # calculate average value from brain size and boy mass per family
+  summarize(avg_brain = mean(Brain_Size_Species_Mean,na.rm = TRUE), # average
+            avg_mass_M = mean(Body_mass_male_mean,na.rm = TRUE)) %>% # average 
+  # arrange by increasing avg brain size
+  arrange(avg_brain,decreasing = FALSE)
+
+head(new_df)
+```
