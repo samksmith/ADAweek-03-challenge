@@ -1,0 +1,115 @@
+---
+title: "EDA-challenge.Rmd"
+author: "Sam Smith"
+date: "2/7/2022"
+output: html_document
+---
+challenge posed over the weekend (2.5-2.6)
+Start by loading packages, data, and creating three new variables
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+# load in data
+f <- "https://raw.githubusercontent.com/difiore/ada-2022-datasets/main/data-wrangling.csv"
+d <- read_csv(f, col_names = TRUE) # creates a "tibble"
+str(d) # what is the structure of the data
+names(d) # what are the variable names
+
+# create body size dimorphism variable (BSD) (male:female body mass)
+d = mutate(d, "BSD" = Body_mass_male_mean/Body_mass_female_mean,
+           # sex ratio variable = # adult females : # adult males
+           "sex_ratio" = AdultFemale/AdultMales,
+           # defensibility index = day range length : diameter home range
+           # note: HomeRange_km2 is area of homerange - calculated diameter assuming home range is a circle
+           "DI" = DayLength_km/(2*sqrt(HomeRange_km2/pi)))
+```
+
+Plot the relationship between day range length and time spent moving, for these primate species overall and by family. Do species that spend more time moving travel farther overall? How about within any particular primate family? Should you transform either of these variables?
+
+```{r}
+# data plotted overall
+ggplot(data=d,aes(x=Move,y=DayLength_km,color=factor(Family))) +
+  xlab("Time spent moving") + ylab("Day range length (Km)") +
+  geom_point(na.rm=TRUE) +
+  theme(legend.position="bottom", legend.title=element_blank())
+
+# data plotted by family
+ggplot(data=d,aes(x=Move,y=DayLength_km,color=factor(Family))) +
+  xlab("Time spent moving") + ylab("Day range length (Km)") +
+  geom_point(na.rm=TRUE) + 
+  facet_wrap(~ Family, ncol=4) +
+  theme(legend.position="none")
+```
+
+Do species that spend more time moving travel farther overall? - umm not super clear relationship no.
+How about within any particular primate family? - looks like most don't have a huge day range length except some Cercopithecidae. 
+
+Should you transform either of these variables?
+
+Plot the relationship between day range length and group size, overall and by family. Do species that live in larger groups travel farther overall? How about within any particular primate family? Should you transform either of these variables?
+
+```{r}
+# plotted overall
+ggplot(data=d,aes(x=MeanGroupSize,y=DayLength_km,color=factor(Family))) +
+  xlab("Mean group size") + ylab("Day range length (Km)") +
+  geom_point(na.rm=TRUE) +
+  theme(legend.position="bottom", legend.title=element_blank())
+
+# data plotted by family
+ggplot(data=d,aes(x=MeanGroupSize,y=DayLength_km,color=factor(Family))) +
+  xlab("Mean group size") + ylab("Day range length (Km)") +
+  geom_point(na.rm=TRUE) + 
+  facet_wrap(~ Family, ncol=4) +
+  theme(legend.position="none")
+```
+Seems like there might be a relationship...
+
+Plot the relationship between body size dimorphism and canine size dimorphism overall and by family. Do taxa with greater size dimorphism also show greater canine dimorphism?
+
+```{r}
+# plotted overall
+ggplot(data=d,aes(x=BSD,y=Canine_Dimorphism,color=factor(Family))) +
+  xlab("Body size dimorphism") + ylab("Canine size dimorphism") +
+  geom_point(na.rm=TRUE) +
+  theme(legend.position="bottom", legend.title=element_blank())
+
+# data plotted by family
+ggplot(data=d,aes(x=BSD,y=Canine_Dimorphism,color=factor(Family))) +
+  xlab("Body size dimorphism") + ylab("Canine size dimorphism") +
+  geom_point(na.rm=TRUE) + 
+  facet_wrap(~ Family, ncol=4) +
+  theme(legend.position="none")
+```
+
+Create a new variable named diet_strategy that is “frugivore” if fruits make up >50% of the diet, “folivore” if leaves make up >50% of the diet, and “omnnivore” if neither of these is true. Then, do boxplots of group size for species with different dietary strategies. Do frugivores live in larger groups than folivores?
+
+```{r}
+# using dplyr
+d <- mutate(d, "diet_strategy" = case_when(Fruit >= 50 ~ "frugivore",
+                             Leaves >= 50 ~ "folivore",
+                             Fruit < 50 & Leaves < 50 ~ "omnivore"))
+
+```
+
+In one line of code, using dplyr verbs and the forward pipe (%>%) operator, do the following:
+Add a variable, Binomial to the data frame d, which is a concatenation of the Genus and Species…
+Trim the data frame to only include the variables Binomial, Family, Brain_size_species_mean, and Body_mass_male_mean…
+Group these variables by Family…
+Calculate the average value for Brain_size_species_mean and Body_mass_male_mean per Family (remember, you may need to specify na.rm = TRUE)…
+And arrange by increasing average brain size
+```{r}
+# add new variable
+new_df <- mutate(d,"Binomial" = paste(Genus,Species,sep=" ")) %>% 
+  # select only a few columns
+  select(Binomial, Family, Brain_Size_Species_Mean, Body_mass_male_mean) %>%
+  # group data by family
+  group_by(Family) %>%
+  # find average brain size and average male mass for each fam
+  summarize(avg_brain_size = mean(Brain_Size_Species_Mean, na.rm=TRUE),
+          avg_mass_male = mean(Body_mass_male_mean, na.rm=TRUE)) %>%
+  # arrange the data by increasing brain size
+  arrange(avg_brain_size,decreasing=FALSE)
+
+head(new_df)
+```

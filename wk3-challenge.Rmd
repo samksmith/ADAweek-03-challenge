@@ -73,7 +73,7 @@ scatterplotMatrix(d[,c(6,9,12,19,20,29,31)],smooth = TRUE,
   upper.panel = NULL)
 ```
 
-Now onto the challenge posed during class:
+Now onto the challenge posed during class (Tuesday 2/1/22):
 In one line of code, add a variable, binomial to the data frame d, which is a concatenation of the genus and species. trim the data frame to only include the variables binomial, family, brain_size_species_mean, body_mass_male_mean. Group the variables by family. Calculate the avg value from brain size and body mass male mean per family (na.rm should be true here). Then arrange by increasing average brain size.
 
 ``` {r}
